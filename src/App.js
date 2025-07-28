@@ -549,8 +549,6 @@ const PerformanceReviewApp = () => {
     const currentConsultant = mockData.users.find(u => u.role === 'Consultant');
     const consultantReviews = mockData.reviews.filter(r => r.consultantId === currentConsultant?.id);
 
-
-
     const handleSaveDraft = () => {
       if (!selectedReview) return;
 
@@ -672,7 +670,34 @@ const PerformanceReviewApp = () => {
                               {averageScore}/5
                             </span>
                           </div>
-                        )}
+                );
+              })}
+            </div>
+
+            <button 
+              onClick={() => setShowModal(false)} 
+              className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Close
+            </button>
+          </div>
+        )}
+        
+        {modalType === 'submitReview' && (
+          <div className="space-y-4">
+            <p>Are you sure you want to submit? You cannot edit your answers after submission.</p>
+            <div className="flex justify-end space-x-2">
+              <button onClick={() => setShowModal(false)} className="px-4 py-2 border rounded">Cancel</button>
+              <button onClick={handleSubmitReview} className="px-4 py-2 bg-blue-600 text-white rounded">Final Submit</button>
+            </div>
+          </div>
+        )}
+      </Modal>
+    </div>
+  );
+};
+
+export default PerformanceReviewApp;        )}
                       </div>
 
                       {/* Additional Status Information */}
@@ -1268,8 +1293,7 @@ const PerformanceReviewApp = () => {
               <div className="bg-gray-50 rounded-lg p-4 mb-4">
                 <h4 className="text-sm font-medium text-gray-700 mb-2">Review Summary:</h4>
                 <div className="text-sm text-gray-600">
-                  <p>Questions Answered: {Object.keys(reviewAnswers).filter(qId => reviewAnswers[qId]?.trim()).length} / {Object.keys(reviewAnswers).length}</p>
-                  <p className="mt-1">Your responses will be sent to your team leader for evaluation.</p>
+                  <p>Your responses will be sent to your team leader for evaluation.</p>
                 </div>
               </div>
             </div>
@@ -1279,45 +1303,7 @@ const PerformanceReviewApp = () => {
                 Cancel
               </button>
               <button 
-                onClick={() => {
-                  // Handle submission
-                  const campaign = mockData.campaigns.find(c => c.id === selectedReview.campaignId);
-                  const requiredQuestions = campaign?.questionIds || [];
-                  const answeredQuestions = Object.keys(reviewAnswers).filter(qId => reviewAnswers[qId]?.trim());
-
-                  if (answeredQuestions.length < requiredQuestions.length) {
-                    showNotification('Please answer all questions before submitting', 'error');
-                    return;
-                  }
-
-                  setMockData(prev => ({
-                    ...prev,
-                    reviews: prev.reviews.map(review => 
-                      review.id === selectedReview.id 
-                        ? {
-                            ...review,
-                            isDraft: false,
-                            status: 'Ready for Your Review',
-                            answers: {
-                              ...review.answers,
-                              ...Object.keys(reviewAnswers).reduce((acc, qId) => ({
-                                ...acc,
-                                [qId]: {
-                                  ...review.answers[qId],
-                                  consultantAnswer: reviewAnswers[qId]
-                                }
-                              }), {})
-                            }
-                          }
-                        : review
-                    )
-                  }));
-
-                  // Show success modal
-                  setTimeout(() => {
-                    setModalType('submissionSuccess');
-                  }, 100);
-                }} 
+                onClick={handleSubmitReview} 
                 className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
               >
                 Confirm Submission
@@ -1347,9 +1333,6 @@ const PerformanceReviewApp = () => {
             <button 
               onClick={() => {
                 setShowModal(false);
-                setSelectedReview(null);
-                setReviewAnswers({});
-                showNotification('Review submitted successfully');
               }} 
               className="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
             >
@@ -1422,31 +1405,3 @@ const PerformanceReviewApp = () => {
                       )}
                     </div>
                   </div>
-                );
-              })}
-            </div>
-
-            <button 
-              onClick={() => setShowModal(false)} 
-              className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
-              Close
-            </button>
-          </div>
-        )}
-        
-        {modalType === 'submitReview' && (
-          <div className="space-y-4">
-            <p>Are you sure you want to submit? You cannot edit your answers after submission.</p>
-            <div className="flex justify-end space-x-2">
-              <button onClick={() => setShowModal(false)} className="px-4 py-2 border rounded">Cancel</button>
-              <button onClick={handleSubmitReview} className="px-4 py-2 bg-blue-600 text-white rounded">Final Submit</button>
-            </div>
-          </div>
-        )}
-      </Modal>
-    </div>
-  );
-};
-
-export default PerformanceReviewApp;
