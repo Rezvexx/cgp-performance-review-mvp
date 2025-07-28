@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Users, Calendar, MessageSquare, BarChart3, User, UserCheck, Settings, X, Check, AlertCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { Users, Calendar, MessageSquare, BarChart3, X, Check, AlertCircle } from 'lucide-react';
 
 const PerformanceReviewApp = () => {
   const [currentView, setCurrentView] = useState('consultant');
@@ -545,6 +545,8 @@ const PerformanceReviewApp = () => {
   const ConsultantView = () => {
     const [selectedReview, setSelectedReview] = useState(null);
     const [reviewAnswers, setReviewAnswers] = useState({});
+    const [showConsultantModal, setShowConsultantModal] = useState(false);
+    const [consultantModalType, setConsultantModalType] = useState('');
 
     const currentConsultant = mockData.users.find(u => u.role === 'Consultant');
     const consultantReviews = mockData.reviews.filter(r => r.consultantId === currentConsultant?.id);
@@ -617,7 +619,25 @@ const PerformanceReviewApp = () => {
       showNotification('Review submitted successfully');
       setSelectedReview(null);
       setReviewAnswers({});
-      setShowModal(false);
+      setShowConsultantModal(false);
+    };
+
+    const ConsultantModal = ({ isOpen, onClose, title, children }) => {
+      if (!isOpen) return null;
+      
+      return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">{title}</h3>
+              <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            {children}
+          </div>
+        </div>
+      );
     };
 
     const Dashboard = () => {
@@ -649,7 +669,6 @@ const PerformanceReviewApp = () => {
                       <h3 className="text-lg font-semibold text-gray-900">{campaign?.name}</h3>
                       <p className="text-sm text-gray-500 mt-1">Due: {campaign?.endDate}</p>
                       
-                      {/* Status and Score Display */}
                       <div className="mt-3 flex items-center space-x-4">
                         <span className={`px-3 py-1 text-xs rounded-full ${
                           review.status === 'In Progress' ? 'bg-orange-100 text-orange-800' :
@@ -670,46 +689,18 @@ const PerformanceReviewApp = () => {
                               {averageScore}/5
                             </span>
                           </div>
-                );
-              })}
-            </div>
-
-            <button 
-              onClick={() => setShowModal(false)} 
-              className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
-              Close
-            </button>
-          </div>
-        )}
-        
-        {modalType === 'submitReview' && (
-          <div className="space-y-4">
-            <p>Are you sure you want to submit? You cannot edit your answers after submission.</p>
-            <div className="flex justify-end space-x-2">
-              <button onClick={() => setShowModal(false)} className="px-4 py-2 border rounded">Cancel</button>
-              <button onClick={handleSubmitReview} className="px-4 py-2 bg-blue-600 text-white rounded">Final Submit</button>
-            </div>
-          </div>
-        )}
-      </Modal>
-    </div>
-  );
-};
-
-export default PerformanceReviewApp;        )}
+                        )}
                       </div>
 
-                      {/* Additional Status Information */}
                       {review.status === 'Completed' && (
                         <div className="mt-3 p-3 bg-gray-50 rounded-lg">
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-sm font-medium text-gray-700">Review Details:</span>
                             <button 
                               onClick={() => {
-                                setModalType('viewResults');
+                                setConsultantModalType('viewResults');
                                 setSelectedItem(review);
-                                setShowModal(true);
+                                setShowConsultantModal(true);
                               }}
                               className="text-blue-600 hover:text-blue-800 text-sm"
                             >
@@ -770,9 +761,9 @@ export default PerformanceReviewApp;        )}
                       {review.status === 'Completed' && (
                         <button 
                           onClick={() => {
-                            setModalType('viewResults');
+                            setConsultantModalType('viewResults');
                             setSelectedItem(review);
-                            setShowModal(true);
+                            setShowConsultantModal(true);
                           }}
                           className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
                         >
@@ -785,6 +776,152 @@ export default PerformanceReviewApp;        )}
               );
             })}
           </div>
+
+          <ConsultantModal 
+            isOpen={showConsultantModal} 
+            onClose={() => setShowConsultantModal(false)}
+            title={
+              consultantModalType === 'confirmSubmission' ? 'Submit Performance Review' :
+              consultantModalType === 'submissionSuccess' ? 'Review Submitted!' :
+              consultantModalType === 'viewResults' ? 'Performance Review Results' :
+              'Modal'
+            }
+          >
+            {consultantModalType === 'confirmSubmission' && (
+              <div className="space-y-4">
+                <div className="text-center">
+                  <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+                    <Check className="h-6 w-6 text-green-600" />
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Submit Performance Review</h3>
+                  <p className="text-sm text-gray-500 mb-4">
+                    Are you sure you want to submit your performance review? Once submitted, you cannot make any changes.
+                  </p>
+                  
+                  <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">Review Summary:</h4>
+                    <div className="text-sm text-gray-600">
+                      <p>Your responses will be sent to your team leader for evaluation.</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex justify-end space-x-2">
+                  <button onClick={() => setShowConsultantModal(false)} className="px-4 py-2 border rounded hover:bg-gray-50">
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={handleSubmitReview} 
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  >
+                    Confirm Submission
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {consultantModalType === 'submissionSuccess' && (
+              <div className="space-y-4 text-center">
+                <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-4">
+                  <Check className="h-8 w-8 text-green-600" />
+                </div>
+                <h3 className="text-xl font-medium text-gray-900">Review Submitted Successfully!</h3>
+                <p className="text-gray-600">
+                  Your performance review has been submitted and sent to your team leader for evaluation. 
+                  You'll be notified once the review is complete.
+                </p>
+                <div className="bg-blue-50 rounded-lg p-4">
+                  <p className="text-sm text-blue-800">
+                    <strong>Next Steps:</strong><br/>
+                    • Your team leader will review your responses<br/>
+                    • You'll receive scores and feedback once completed<br/>
+                    • Check your dashboard for updates
+                  </p>
+                </div>
+                <button 
+                  onClick={() => setShowConsultantModal(false)} 
+                  className="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                >
+                  Back to Dashboard
+                </button>
+              </div>
+            )}
+
+            {consultantModalType === 'viewResults' && selectedItem && (
+              <div className="space-y-4 max-w-2xl">
+                <h3 className="text-lg font-medium text-gray-900">Performance Review Results</h3>
+                
+                {(() => {
+                  const ratings = Object.values(selectedItem.answers)
+                    .map(answer => answer.leaderRating)
+                    .filter(rating => rating !== null && rating !== undefined);
+                  
+                  if (ratings.length > 0) {
+                    const sum = ratings.reduce((acc, rating) => acc + parseInt(rating), 0);
+                    const average = (sum / ratings.length).toFixed(1);
+                    
+                    return (
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium text-gray-700">Overall Score:</span>
+                          <span className={`px-3 py-1 text-lg font-bold rounded ${
+                            parseFloat(average) >= 4 ? 'bg-green-100 text-green-800' :
+                            parseFloat(average) >= 3 ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {average}/5
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  }
+                })()}
+
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {Object.keys(selectedItem.answers).map(questionId => {
+                    const question = mockData.questions.find(q => q.id === parseInt(questionId));
+                    const answer = selectedItem.answers[questionId];
+                    
+                    return (
+                      <div key={questionId} className="border rounded-lg p-4">
+                        <h4 className="font-medium text-gray-900 mb-2">{question?.text}</h4>
+                        
+                        <div className="space-y-2">
+                          <div>
+                            <span className="text-sm font-medium text-gray-600">Your Answer:</span>
+                            <p className="text-sm text-gray-800 mt-1">{answer.consultantAnswer || 'No response'}</p>
+                          </div>
+                          
+                          {answer.leaderRating && (
+                            <div>
+                              <span className="text-sm font-medium text-gray-600">Leader's Rating:</span>
+                              <span className="ml-2 px-2 py-1 text-sm font-bold bg-blue-100 text-blue-800 rounded">
+                                {answer.leaderRating}/5
+                              </span>
+                            </div>
+                          )}
+                          
+                          {answer.leaderComment && (
+                            <div>
+                              <span className="text-sm font-medium text-gray-600">Leader's Feedback:</span>
+                              <p className="text-sm text-gray-800 mt-1 bg-yellow-50 p-2 rounded">{answer.leaderComment}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <button 
+                  onClick={() => setShowConsultantModal(false)} 
+                  className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  Close
+                </button>
+              </div>
+            )}
+          </ConsultantModal>
         </div>
       );
     };
@@ -854,8 +991,8 @@ export default PerformanceReviewApp;        )}
               </button>
               <button 
                 onClick={() => {
-                  setModalType('confirmSubmission');
-                  setShowModal(true);
+                  setConsultantModalType('confirmSubmission');
+                  setShowConsultantModal(true);
                 }}
                 className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
               >
@@ -1109,7 +1246,7 @@ export default PerformanceReviewApp;        )}
       {currentView === 'consultant' && <ConsultantView />}
       {currentView === 'leader' && <TeamLeaderView />}
 
-      {/* Modals */}
+      {/* Admin Modals */}
       <Modal 
         isOpen={showModal} 
         onClose={() => setShowModal(false)}
@@ -1119,7 +1256,6 @@ export default PerformanceReviewApp;        )}
           modalType === 'question' ? (selectedItem ? 'Edit Question' : 'Create Question') :
           modalType === 'deleteUser' ? 'Confirm Delete' :
           modalType === 'deleteQuestion' ? 'Confirm Delete' :
-          modalType === 'submitReview' ? 'Confirm Submission' :
           'Modal'
         }
       >
@@ -1235,173 +1371,4 @@ export default PerformanceReviewApp;        )}
             <select 
               className="w-full p-2 border rounded"
               value={formData.type || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
-            >
-              <option value="">Select Type</option>
-              <option value="Text Response">Text Response</option>
-              <option value="Rating (1-5)">Rating (1-5)</option>
-            </select>
-            <div className="flex justify-end space-x-2">
-              <button onClick={() => setShowModal(false)} className="px-4 py-2 border rounded">Cancel</button>
-              <button onClick={handleSaveQuestion} className="px-4 py-2 bg-blue-600 text-white rounded">Save Question</button>
-            </div>
-          </div>
-        )}
-
-        {modalType === 'deleteUser' && (
-          <div className="space-y-4">
-            <p>Are you sure you want to delete user "{selectedItem?.name}"? This action cannot be undone.</p>
-            <div className="flex justify-end space-x-2">
-              <button onClick={() => setShowModal(false)} className="px-4 py-2 border rounded">Cancel</button>
-              <button 
-                onClick={() => handleDeleteUser(selectedItem.id)} 
-                className="px-4 py-2 bg-red-600 text-white rounded"
-              >
-                Confirm Delete
-              </button>
-            </div>
-          </div>
-        )}
-
-        {modalType === 'deleteQuestion' && (
-          <div className="space-y-4">
-            <p>Are you sure you want to delete this question? This action cannot be undone.</p>
-            <div className="flex justify-end space-x-2">
-              <button onClick={() => setShowModal(false)} className="px-4 py-2 border rounded">Cancel</button>
-              <button 
-                onClick={() => handleDeleteQuestion(selectedItem.id)} 
-                className="px-4 py-2 bg-red-600 text-white rounded"
-              >
-                Confirm Delete
-              </button>
-            </div>
-          </div>
-        )}
-        
-        {modalType === 'confirmSubmission' && (
-          <div className="space-y-4">
-            <div className="text-center">
-              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
-                <Check className="h-6 w-6 text-green-600" />
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Submit Performance Review</h3>
-              <p className="text-sm text-gray-500 mb-4">
-                Are you sure you want to submit your performance review? Once submitted, you cannot make any changes.
-              </p>
-              
-              {/* Review Summary */}
-              <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                <h4 className="text-sm font-medium text-gray-700 mb-2">Review Summary:</h4>
-                <div className="text-sm text-gray-600">
-                  <p>Your responses will be sent to your team leader for evaluation.</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex justify-end space-x-2">
-              <button onClick={() => setShowModal(false)} className="px-4 py-2 border rounded hover:bg-gray-50">
-                Cancel
-              </button>
-              <button 
-                onClick={handleSubmitReview} 
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              >
-                Confirm Submission
-              </button>
-            </div>
-          </div>
-        )}
-
-        {modalType === 'submissionSuccess' && (
-          <div className="space-y-4 text-center">
-            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-4">
-              <Check className="h-8 w-8 text-green-600" />
-            </div>
-            <h3 className="text-xl font-medium text-gray-900">Review Submitted Successfully!</h3>
-            <p className="text-gray-600">
-              Your performance review has been submitted and sent to your team leader for evaluation. 
-              You'll be notified once the review is complete.
-            </p>
-            <div className="bg-blue-50 rounded-lg p-4">
-              <p className="text-sm text-blue-800">
-                <strong>Next Steps:</strong><br/>
-                • Your team leader will review your responses<br/>
-                • You'll receive scores and feedback once completed<br/>
-                • Check your dashboard for updates
-              </p>
-            </div>
-            <button 
-              onClick={() => {
-                setShowModal(false);
-              }} 
-              className="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-            >
-              Back to Dashboard
-            </button>
-          </div>
-        )}
-
-        {modalType === 'viewResults' && selectedItem && (
-          <div className="space-y-4 max-w-2xl">
-            <h3 className="text-lg font-medium text-gray-900">Performance Review Results</h3>
-            
-            {/* Overall Score */}
-            {(() => {
-              const ratings = Object.values(selectedItem.answers)
-                .map(answer => answer.leaderRating)
-                .filter(rating => rating !== null && rating !== undefined);
-              
-              if (ratings.length > 0) {
-                const sum = ratings.reduce((acc, rating) => acc + parseInt(rating), 0);
-                const average = (sum / ratings.length).toFixed(1);
-                
-                return (
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium text-gray-700">Overall Score:</span>
-                      <span className={`px-3 py-1 text-lg font-bold rounded ${
-                        parseFloat(average) >= 4 ? 'bg-green-100 text-green-800' :
-                        parseFloat(average) >= 3 ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
-                        {average}/5
-                      </span>
-                    </div>
-                  </div>
-                );
-              }
-            })()}
-
-            {/* Individual Question Results */}
-            <div className="space-y-3 max-h-96 overflow-y-auto">
-              {Object.keys(selectedItem.answers).map(questionId => {
-                const question = mockData.questions.find(q => q.id === parseInt(questionId));
-                const answer = selectedItem.answers[questionId];
-                
-                return (
-                  <div key={questionId} className="border rounded-lg p-4">
-                    <h4 className="font-medium text-gray-900 mb-2">{question?.text}</h4>
-                    
-                    <div className="space-y-2">
-                      <div>
-                        <span className="text-sm font-medium text-gray-600">Your Answer:</span>
-                        <p className="text-sm text-gray-800 mt-1">{answer.consultantAnswer || 'No response'}</p>
-                      </div>
-                      
-                      {answer.leaderRating && (
-                        <div>
-                          <span className="text-sm font-medium text-gray-600">Leader's Rating:</span>
-                          <span className="ml-2 px-2 py-1 text-sm font-bold bg-blue-100 text-blue-800 rounded">
-                            {answer.leaderRating}/5
-                          </span>
-                        </div>
-                      )}
-                      
-                      {answer.leaderComment && (
-                        <div>
-                          <span className="text-sm font-medium text-gray-600">Leader's Feedback:</span>
-                          <p className="text-sm text-gray-800 mt-1 bg-yellow-50 p-2 rounded">{answer.leaderComment}</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+              onChange={(e) => setFormData(prev => ({ ...prev, type: e.target
